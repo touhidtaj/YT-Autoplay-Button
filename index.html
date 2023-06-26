@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta name="ad.size" content="width=300,height=250" />
+    <title>YT InBanner Video</title>
+    <style type="text/css">
+      #action,
+      #video-container:hover #action {
+        opacity: 1;
+      }
+      * {
+        padding: 0;
+        margin: 0;
+      }
+      body,
+      html {
+        width: 300px;
+        height: 250px;
+      }
+      .hidden {
+        display: none;
+      }
+      .show {
+        display: block !important;
+      }
+      #video-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        cursor: pointer;
+        background: #08abf3;
+      }
+      #action,
+      .readMore,
+      .readMore .details,
+      .slide_1 {
+        position: absolute;
+      }
+      #action {
+        display: block;
+        transform: translateX(-50%) translateY(-50%);
+        top: 50%;
+        right: 0;
+        height: 32px;
+        width: 32px;
+      }
+      .slide_1 {
+        width: 100%;
+        height: 100%;
+        background-image: linear-gradient(to right, #000, rgba(0, 0, 0, 0));
+      }
+      .readMore {
+        width: 50%;
+        height: 46px;
+        bottom: -15px;
+        left: 5px;
+        z-index: 9999;
+      }
+      .readMore .details {
+        color: #fff;
+        font-size: 12px;
+        top: 0;
+        left: 0;
+        font-weight: 700;
+      }
+      button.audio_control {
+        position: absolute;
+        right: 7px;
+        bottom: 54px;
+        line-height: 5px;
+        background: #19aaf8;
+        width: 70px;
+        font-size: 14px;
+        height: 29px;
+        border-radius: 8px;
+        cursor: pointer;
+        color: #fff;
+        border: 2px solid #fff !important;
+        font-weight: 600;
+      }
+    </style>
+    <script>
+      var clickTag = "https://www.youtube.com/watch?v=tVtqjD1sw88&t=2s";
+    </script>
+    <script type="text/javascript">
+      (function () {
+        var MAX_URL_PARAM_LENGTH = 34;
+        var CLICK_X_URL_KEY = "nx";
+        var CLICK_Y_URL_KEY = "ny";
+        var CREATIVE_DIMENSIONS_KEY = "dim";
+        var AD_URL_PARAM = "&adurl=";
+
+        var relegateNavigation = "";
+        var urlParamMap = {};
+
+        urlParamMap[CLICK_X_URL_KEY] = null;
+        urlParamMap[CLICK_Y_URL_KEY] = null;
+        urlParamMap[CREATIVE_DIMENSIONS_KEY] = null;
+
+        var handleClickTagMessage = function (e) {
+          try {
+            var eventData = JSON.parse(e.data);
+          } catch (err) {
+            return;
+          }
+          if (eventData.isInitClickTag) {
+            if (eventData.clickTags) {
+              for (var i = 0; i < eventData.clickTags.length; i++) {
+                var clkTag = eventData.clickTags[i];
+                window[clkTag.name] = clkTag.url;
+              }
+            } else if (eventData.clickTag) {
+              window.clickTag = eventData.clickTag;
+            }
+            relegateNavigation = eventData.relegateNavigation;
+          }
+        };
+
+        var storeClickCoordinates = function (e) {
+          urlParamMap[CLICK_X_URL_KEY] = Math.round(e.clientX);
+          urlParamMap[CLICK_Y_URL_KEY] = Math.round(e.clientY);
+        };
+
+        var getCreativeDimensions = function () {
+          return window.innerWidth + "x" + window.innerHeight;
+        };
+
+        var getExitClickParams = function (e) {
+          urlParamMap[CREATIVE_DIMENSIONS_KEY] = getCreativeDimensions();
+
+          var exitParams = "";
+          for (var key in urlParamMap) {
+            exitParams += "&" + key + "=";
+            if (urlParamMap[key] !== null) {
+              exitParams += urlParamMap[key];
+            }
+          }
+          return exitParams;
+        };
+
+        var appendExitClickParams = function (url) {
+          var adUrlIndex = url.toLowerCase().indexOf(AD_URL_PARAM);
+          var paramsToBeAdded = getExitClickParams();
+          if (
+            adUrlIndex > -1 &&
+            paramsToBeAdded.length <= MAX_URL_PARAM_LENGTH
+          ) {
+            url =
+              url.substr(0, adUrlIndex) +
+              paramsToBeAdded +
+              url.substr(adUrlIndex);
+          }
+          return url;
+        };
+
+        if (open.call) {
+          window.open = (function (open) {
+            return function (url, name, features) {
+              url = appendExitClickParams(url);
+              if (relegateNavigation === "parent") {
+                var message = { clickTag: url, isPostClickTag: true };
+                parent.postMessage(JSON.stringify(message), "*");
+              } else {
+                var args = [url, name];
+                if (features) {
+                  args.push(features);
+                }
+                open.apply(window, args);
+              }
+            };
+          })(window.open);
+        }
+
+        if (window.addEventListener) {
+          window.addEventListener("message", handleClickTagMessage, false);
+          window.addEventListener("mousedown", storeClickCoordinates, true);
+        } else {
+          window.attachEvent("onmessage", handleClickTagMessage);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="video-container">
+      <div class="slide_1">
+        <iframe
+          id="ytplayer"
+          width="300"
+          height="250"
+          src="//www.youtube.com/embed/tVtqjD1sw88?rel=0&amp;autoplay=1&amp;controls=0&amp;enablejsapi=1&amp;playerapiid=ytplayer"
+          frameborder="0"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+        <button class="audio_control" onclick="toggleMute()">Unmute</button>
+      </div>
+      <div class="readMore">
+        <a
+          href="javascript:void(window.open(clickTag))"
+          class="details"
+          target="_blank"
+          ><span>বিস্তারিত দেখুন</span></a
+        >
+      </div>
+    </div>
+    <script>
+      var tag = document.createElement("script");
+      var isPlay = false;
+      let played = true;
+      let audioControl = document.querySelector(".audio_control");
+      let device =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        )
+          ? "mobile"
+          : "desktop";
+
+      tag.src = "https://www.youtube.com/player_api";
+      var firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      document.querySelector("#ytplayer").src =
+        "https://www.youtube.com/embed/tVtqjD1sw88?rel=0&autoplay=1&controls=0&enablejsapi=1&playerapiid=ytplayer&loop=1&playlist=tVtqjD1sw88";
+      var player;
+      function onYouTubePlayerAPIReady() {
+        player = new YT.Player("ytplayer", {
+          events: {
+            onStateChange: ShowMe,
+            onReady: onPlayerReady,
+          },
+        });
+      }
+
+      function ShowMe() {
+        var sStatus;
+        sStatus = player.getPlayerState();
+        if (sStatus == 0) {
+          if (isPlay) {
+            player.stopVideo();
+          }
+        } else if (sStatus == 1) {
+          if (played) {
+            played = false;
+          }
+        }
+      }
+
+      function toggleMute() {
+        if (player.isMuted()) {
+          player.unMute();
+          audioControl.innerText = "Mute";
+        } else {
+          player.mute();
+          audioControl.innerText = "Unmute";
+        }
+      }
+
+      if (device == "desktop") {
+        function onPlayerReady(event) {
+          event.target.mute();
+        }
+      }
+    </script>
+  </body>
+</html>
